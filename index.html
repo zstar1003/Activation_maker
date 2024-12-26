@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>激活码生成器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .input-field {
+            margin-bottom: 15px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        .activation-code {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .copy-button {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .copy-button:disabled {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>激活码生成器</h1>
+        <div class="input-field">
+            <label for="device-id">输入设备ID:</label>
+            <input type="text" id="device-id" placeholder="请输入设备ID" />
+        </div>
+        <button id="generate-btn" onclick="generateActivationCode()">生成激活码</button>
+
+        <div class="activation-code" id="activation-code">
+            <!-- 激活码将显示在这里 -->
+        </div>
+        <button id="copy-btn" class="copy-button" onclick="copyToClipboard()" disabled>复制激活码</button>
+    </div>
+
+    <script>
+        // 用于生成激活码的秘钥
+        const secretKey = 'dvs';
+    // 生成激活码
+    async function generateActivationCode() {
+        const deviceId = document.getElementById('device-id').value;
+
+        if (deviceId) {
+            try {
+                // 生成激活码
+                const activationCode = await generateCodeFromDeviceId(deviceId);  // 等待异步操作完成
+                document.getElementById('activation-code').textContent = '生成的激活码: ' + activationCode;
+                document.getElementById('copy-btn').disabled = false;  // 启用复制按钮
+            } catch (error) {
+                document.getElementById('activation-code').textContent = '生成激活码时发生错误！';
+                console.error("生成激活码时发生错误", error);
+            }
+        } else {
+            document.getElementById('activation-code').textContent = '请输入设备ID！';
+            document.getElementById('copy-btn').disabled = true;  // 禁用复制按钮
+        }
+    }
+
+    // 根据设备ID生成激活码
+    function generateCodeFromDeviceId(deviceId) {
+        const encoder = new TextEncoder();
+        const key = encoder.encode(secretKey);
+        const data = encoder.encode(deviceId);
+
+        return crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: { name: 'SHA-256' } }, false, ['sign'])
+            .then(importedKey => {
+                return crypto.subtle.sign('HMAC', importedKey, data)
+            })
+            .then(signature => {
+                // 将签名转换为十六进制字符串，并返回前16个字符
+                const hashArray = Array.from(new Uint8Array(signature));
+                const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+                return hashHex.substring(0, 16);  // 返回前16个字符
+            })
+            .catch(error => {
+                console.error("生成激活码时发生错误", error);
+            });
+    }
+
+        // 复制激活码到剪贴板
+        function copyToClipboard() {
+            const activationCode = document.getElementById('activation-code').textContent.replace('生成的激活码: ', '');
+            if (activationCode) {
+                navigator.clipboard.writeText(activationCode).then(() => {
+                    alert("激活码已复制到剪贴板！");
+                }).catch(err => {
+                    console.error('复制失败: ', err);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
