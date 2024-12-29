@@ -1,1 +1,1 @@
-visit：[https://xdxsb.top/Activation_maker]
+https://xdxsb.top/Activation_maker
